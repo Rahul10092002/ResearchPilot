@@ -103,6 +103,47 @@ Research, Analysis, and Critic are each built as their own **independently compi
 
 ---
 
+## MCP Server Tools & Setup
+
+ResearchPilot includes a standalone **MCP Server** built with the Python MCP SDK (`FastMCP`), providing structured financial tools:
+
+- `get_stock_price(ticker: str)`: Fetches real-time / closing stock prices via `yfinance` with fallback to historical 1-day close, returning ISO-8601 UTC timestamps and structured error handling.
+- `get_recent_news(topic: str, max_results: int = 5)`: Fetches news articles for tickers or generic research queries with routing across `yfinance` and `Tavily`.
+- `get_company_fundamentals(ticker: str)`: Extracts P/E, Forward P/E, Market Cap, EPS, Revenue, Margins, and 52-week ranges with null-safe dictionary extraction.
+
+### Running the MCP Server
+
+- **Interactive / Standalone SSE Mode (HTTP):**
+  ```bash
+  cd mcp-server
+  uv run python server.py
+  # or via uvicorn
+  uv run uvicorn server:app --reload
+  ```
+
+- **Connecting with Claude Desktop:**
+  Add the server to `%APPDATA%\Claude\claude_desktop_config.json`:
+  ```json
+  {
+    "mcpServers": {
+      "research-pilot": {
+        "command": "C:\\Users\\Rahul\\AppData\\Local\\hermes\\bin\\uv.exe",
+        "args": [
+          "--directory",
+          "E:\\ResearchPilot\\mcp-server",
+          "run",
+          "python",
+          "server.py",
+          "--transport",
+          "stdio"
+        ]
+      }
+    }
+  }
+  ```
+
+---
+
 ## Tech stack
 
 | Layer | Choice |
@@ -132,7 +173,11 @@ Research, Analysis, and Critic are each built as their own **independently compi
 ```
 research-pilot/
 ├── mcp-server/
+│   ├── server.py                 # FastMCP entrypoint (stdio & SSE transport)
 │   ├── tools/                    # stock price, news, fundamentals
+│   │   ├── stock_price.py
+│   │   ├── recent_news.py
+│   │   └── company_fundamentals.py
 │   └── reliability/               # retry, circuit breaker, cache wrappers
 ├── backend/
 │   ├── graph/
@@ -208,4 +253,4 @@ Confirmed future work, deliberately kept out of the core build so the initial ti
 
 ## Status
 
-Actively in development. Current stage: foundation + MCP server (Week 1 of the build plan).
+Actively in development. Core MCP server tools completed (`get_stock_price`, `get_recent_news`, `get_company_fundamentals`).
