@@ -3,17 +3,14 @@ import logging
 import time
 from reliability.cache import get_cached_value, make_cache_key
 from reliability.circuit_breaker import get_circuit_breaker
+from reliability.logging_config import setup_mcp_logging
 from reliability.retry import with_retry
 from tools.stock_price import get_stock_price
 from tools.recent_news import get_recent_news
 from tools.company_fundamentals import get_company_fundamentals
 
-# Setup verbose logging to stdout to verify retry logs and circuit breaker trips
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
-logger = logging.getLogger("test_reliability")
+# Initialize ISO-8601 UTC logging with request UUIDs
+logger = setup_mcp_logging(level=logging.INFO)
 
 def test_cache_hits():
     print("\n--- 1. Testing TTL Cache Hits ---")
@@ -84,7 +81,7 @@ def test_retry_on_transient_failure():
 
 if __name__ == "__main__":
     print("==========================================")
-    print("RUNNING RELIABILITY SUITE VERIFICATION")
+    print("RUNNING RELIABILITY SUITE WITH DETAILED LOGS & UUIDs")
     print("==========================================")
     test_cache_hits()
     test_idempotency()

@@ -35,7 +35,7 @@ def _get_redis_client():
             client = redis.Redis.from_url(url, socket_timeout=2.0, socket_connect_timeout=2.0)
             client.ping()
             _redis_client = client
-            logger.info(f"[Cache] Successfully connected to Redis at {url}")
+            logger.info(f"[Cache] Connected to Redis at {url}")
             _redis_checked = True
             return _redis_client
         except Exception as err:
@@ -58,44 +58,41 @@ def make_cache_key(tool_name: str, kwargs: dict) -> str:
 
 def get_cached_value(key: str) -> Optional[Any]:
     """Retrieve value from Redis or in-memory fallback cache."""
-    # 1. Try Redis
     client = _get_redis_client()
     if client:
         try:
             val = client.get(key)
             if val is not None:
-                logger.debug(f"[Cache] Redis HIT for key: {key}")
+                logger.info(f"[Cache HIT] Redis key='{key}'")
                 return json.loads(val.decode("utf-8"))
         except Exception as err:
-            logger.warning(f"[Cache] Redis get error ({err}), switching to memory fallback.")
+            logger.warning(f"[Cache ERROR] Redis get failed ({err}), switching to memory cache.")
 
-    # 2. Memory Fallback
     now = time.time()
     if key in _memory_cache:
         val, expire_at = _memory_cache[key]
         if expire_at > now:
-            logger.debug(f"[Cache] Memory HIT for key: {key}")
+            logger.info(f"[Cache HIT] Memory key='{key}'")
             return val
         else:
             del _memory_cache[key]
 
+    logger.info(f"[Cache MISS] key='{key}'")
     return None
 
 
 def set_cached_value(key: str, value: Any, ttl_seconds: int) -> None:
     """Store value in Redis and in-memory fallback cache."""
-    # 1. Store in memory fallback
     _memory_cache[key] = (value, time.time() + ttl_seconds)
 
-    # 2. Store in Redis if available
     client = _get_redis_client()
     if client:
         try:
             serialized = json.dumps(value)
             client.setex(key, ttl_seconds, serialized)
-            logger.debug(f"[Cache] Redis SET for key: {key} (TTL: {ttl_seconds}s)")
+            logger.info(f"[Cache STORED] Redis key='{key}' ttl={ttl_seconds}s")
         except Exception as err:
-            logger.warning(f"[Cache] Redis set error ({err}).")
+            logger.warning(f"[Cache ERROR] Redis set error ({err}).")
 
 
 def with_cache(ttl_seconds: int = 900, tool_name: Optional[str] = None) -> Callable:

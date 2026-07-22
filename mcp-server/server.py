@@ -2,17 +2,13 @@ import logging
 import sys
 from mcp.server.fastmcp import FastMCP
 
+from reliability.logging_config import setup_mcp_logging
 from tools.company_fundamentals import get_company_fundamentals as _get_company_fundamentals
 from tools.recent_news import get_recent_news as _get_recent_news
 from tools.stock_price import get_stock_price as _get_stock_price
 
-# Configure logging to stderr to keep stdout clean for stdio MCP protocol transport
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    stream=sys.stderr,
-)
-logger = logging.getLogger("mcp_server")
+# Configure ISO-8601 UTC logging with request UUID tags
+logger = setup_mcp_logging(level=logging.INFO)
 
 # Initialize FastMCP Server
 mcp = FastMCP("ResearchPilot MCP Server")

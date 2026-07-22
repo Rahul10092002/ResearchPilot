@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from reliability.cache import with_cache
 from reliability.circuit_breaker import with_circuit_breaker
 from reliability.idempotency import with_idempotency
+from reliability.logging_config import trace_tool_call
 from reliability.retry import with_retry
 
 load_dotenv()
@@ -53,6 +54,7 @@ def _format_yf_news_item(item: dict) -> Dict[str, str]:
     }
 
 
+@trace_tool_call(tool_name="get_recent_news")
 @with_idempotency(ttl_seconds=86400)
 @with_circuit_breaker(upstream_name="news_api", failure_threshold=3, recovery_timeout=30.0)
 @with_cache(ttl_seconds=1800, tool_name="get_recent_news")

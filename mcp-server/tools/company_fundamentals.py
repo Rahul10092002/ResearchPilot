@@ -5,11 +5,13 @@ import yfinance as yf
 from reliability.cache import with_cache
 from reliability.circuit_breaker import with_circuit_breaker
 from reliability.idempotency import with_idempotency
+from reliability.logging_config import trace_tool_call
 from reliability.retry import with_retry
 
 logger = logging.getLogger(__name__)
 
 
+@trace_tool_call(tool_name="get_company_fundamentals")
 @with_idempotency(ttl_seconds=86400)
 @with_circuit_breaker(upstream_name="yfinance", failure_threshold=3, recovery_timeout=30.0)
 @with_cache(ttl_seconds=3600, tool_name="get_company_fundamentals")

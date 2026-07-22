@@ -15,16 +15,7 @@ def with_retry(
     retry_exceptions: Tuple[Type[BaseException], ...] = (Exception,),
     retry_on_error_dict: bool = True,
 ) -> Callable:
-    """Decorator applying exponential backoff with jitter around API calls.
-
-    Args:
-        max_attempts: Maximum number of attempts before raising/returning final result.
-        backoff_base: Base delay in seconds for the first retry.
-        backoff_factor: Multiplier applied on subsequent retries.
-        jitter: Whether to apply randomized jitter to delay times.
-        retry_exceptions: Tuple of exception types to catch and retry.
-        retry_on_error_dict: Whether to treat a returned dict with an 'error' key as a retryable failure.
-    """
+    """Decorator applying exponential backoff with jitter around API calls."""
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
@@ -37,7 +28,6 @@ def with_retry(
                 try:
                     result = func(*args, **kwargs)
 
-                    # Check if result is an error dict and we should retry
                     if (
                         retry_on_error_dict
                         and isinstance(result, dict)
