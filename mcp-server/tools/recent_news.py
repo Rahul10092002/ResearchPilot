@@ -1,10 +1,15 @@
 from datetime import datetime, timezone
+import logging
 import os
 import re
-import logging
 from typing import Any, Dict, List
 import yfinance as yf
 from dotenv import load_dotenv
+
+from reliability.cache import with_cache
+from reliability.circuit_breaker import with_circuit_breaker
+from reliability.idempotency import with_idempotency
+from reliability.retry import with_retry
 
 load_dotenv()
 
@@ -48,7 +53,11 @@ def _format_yf_news_item(item: dict) -> Dict[str, str]:
     }
 
 
-def get_recent_news(topic: str, max_results: int = 5) -> Dict[str, Any]:
+@with_idempotency(ttl_seconds=86400)
+@with_circuit_breaker(upstream_name="news_api", failure_threshold=3, recovery_timeout=30.0)
+@with_cache(ttl_seconds=1800, tool_name="get_recent_news")
+@with_retry(max_attempts=3, backoff_base=0.5, jitter=True)
+def get_recent_news(topic: str, max_results: int = 5, idempotency_key: str = None) -> Dict[str, Any]:
     """Fetch recent news for a stock ticker symbol or general search topic.
 
     Tries yfinance news first if topic appears to be a ticker.

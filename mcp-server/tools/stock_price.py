@@ -3,10 +3,19 @@ import logging
 from typing import Any, Dict
 import yfinance as yf
 
+from reliability.cache import with_cache
+from reliability.circuit_breaker import with_circuit_breaker
+from reliability.idempotency import with_idempotency
+from reliability.retry import with_retry
+
 logger = logging.getLogger(__name__)
 
 
-def get_stock_price(ticker: str) -> Dict[str, Any]:
+@with_idempotency(ttl_seconds=86400)
+@with_circuit_breaker(upstream_name="yfinance", failure_threshold=3, recovery_timeout=30.0)
+@with_cache(ttl_seconds=900, tool_name="get_stock_price")
+@with_retry(max_attempts=3, backoff_base=0.5, jitter=True)
+def get_stock_price(ticker: str, idempotency_key: str = None) -> Dict[str, Any]:
     """Fetch current or latest stock price for a given ticker symbol.
 
     Primary lookup uses yfinance fast_info, falling back to 1-day historical data.
